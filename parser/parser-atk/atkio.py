@@ -2,13 +2,15 @@
 from scipy.io.netcdf import netcdf_file
 
 
+
+
 class X:
     def __init__(self, name=None):
         self.name = name
 
 
 class Atoms:
-    def __init__(self):
+    def __init__(self, fd):
         self.positions = None
         self.numbers = None
         self.cell = None

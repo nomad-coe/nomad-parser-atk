@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import numpy as np
 from ase import units
 from ase.data import chemical_symbols
-from atkio import Reader
+from atkio2 import Reader
 from scipy.io.netcdf import netcdf_file
 from ase.data import atomic_masses
 from ase.units import Rydberg
@@ -47,12 +47,11 @@ def parse(filename):
     p.startedParsingSession(filename, parser_info)
     with o(p, 'section_run'):
         p.addValue('program_name', 'ATK')
-        p.addValue('program_version', r.version)
-        mode = parms['mode']
+        p.addValue('program_version', r.atk_version)
         p.addValue('program_basis_set_type', 'numeric AOs')
         with o(p, 'section_basis_set_atom_centered'):
             p.addValue('basis_set_atom_centered_short_name',
-                      r.basis)
+                      r.calculator.basis)
         with o(p, 'section_system') as system_gid:
             p.addArrayValues('simulation_cell',
                              c(r.atoms.cell, 'angstrom'))
@@ -73,36 +72,34 @@ def parse(filename):
             pass
         with o(p, 'section_method') as method_gid:
             p.addValue('relativity_method', 'pseudo_scalar_relativistic')
-            p.addValue('electronic_structure_method', 'DFT')
-            p.addValue('scf_threshold_energy_change',
-                       c(r.convergence.scf_energy, 'eV')) # eV / electron
-            p.addValue('smearing_kind', r.occupations.name)
+            p.addValue('electronic_structure_method', r.calculator.method)
+            #p.addValue('scf_threshold_energy_change',
+            #           c(r.convergence.scf_energy, 'eV')) # eV / electron
+            p.addValue('smearing_kind', 'fermi')
             p.addRealValue('smearing_width',
-                           c(r.occupations.width, 'eV'))
-            p.addRealValue('total_charge', r.system.charge)
+                           c(r.calculator.temp, 'K'))
+            p.addRealValue('total_charge', r.calculator.charge)
             with o(p, 'section_XC_functionals'):
                 p.addValue('XC_functional_name',
-                           get_libxc_name(r.xc))
+                           get_libxc_name(r.calculator.xc))
         with o(p, 'section_single_configuration_calculation'):
             p.addValue('single_configuration_calculation_to_system_ref',
                        system_gid)
             p.addValue('single_configuration_to_calculation_method_ref',
                        method_gid)
-            p.addValue('single_configuration_calculation_converged',
-                      r.scf.converged)
-            p.addRealValue('energy_total',
-                           c(r.hamiltonian.e_total_extrapolated, 'eV'))
+#            p.addValue('single_configuration_calculation_converged',
+#                      r.scf.converged)
+#            p.addRealValue('energy_total',
+#                           c(r.hamiltonian.e_tot_extrapolated, 'eV'))
             p.addRealValue('energy_free',
-                           c(r.hamiltonian.e_total_free, 'eV'))
+                           c(r.hamiltonian.e_tot, 'eV'))
             p.addRealValue('energy_XC', c(r.hamiltonian.e_xc, 'eV'))
             p.addRealValue('electronic_kinetic_energy',
-                           c(r.hamiltonian.e_kinetic, 'eV'))
+                           c(r.hamiltonian.e_kin, 'eV'))
             p.addRealValue('energy_correction_entropy',
-                           c(r.hamiltonian.e_entropy, 'eV'))
-            p.addRealValue('energy_reference_fermi',
-                          c(r.occupations.fermilevel, 'eV'))
-            p.addRealValue('energy_reference_fermi',
-                          c(r.occupations.fermilevel, 'eV'))
+                           c(r.hamiltonian.e_S, 'eV'))
+#            p.addRealValue('energy_reference_fermi',
+#                          c(r.occupations.fermilevel, 'eV'))
             if hasattr(r.results, 'forces'):
                 p.addArrayValues('atom_forces_free_raw',
                                  c(r.results.forces, 'eV/angstrom'))
@@ -110,14 +107,15 @@ def parse(filename):
             #    p.addArrayValues('x_gpaw_magnetic_moments',
             #                     r.results.magmoms)
             #    p.addRealValue('x_atk_spin_Sz', r.results.magmoms.sum() / 2.0)
-            with o(p, 'section_eigenvalues'):
-                p.addValue('eigenvalues_kind', 'normal')
-                p.addArrayValues('eigenvalues_values',
-                                 c(r.wave_functions.eigenvalues, 'eV'))
-                p.addArrayValues('eigenvalues_occupation',
-                                 r.wave_functions.occupations)
-                p.addArrayValues('eigenvalues_kpoints',
-                                 r.wave_functions.ibz_kpts)
+            if hasattr(r.wave_functions, 'eigenvalues'):
+                with o(p, 'section_eigenvalues'):
+                    p.addValue('eigenvalues_kind', 'normal')
+                    p.addArrayValues('eigenvalues_values',
+                                     c(r.wave_functions.eigenvalues, 'eV'))
+                    p.addArrayValues('eigenvalues_occupation',
+                                     r.wave_functions.occupations)
+                    p.addArrayValues('eigenvalues_kpoints',
+                                     r.wave_functions.ibz_kpts)
             if hasattr(r.wave_functions, 'band_paths'):
                 with o(p, 'section_k_band'):
                     for band_path in r.wave_functions.band_paths:
