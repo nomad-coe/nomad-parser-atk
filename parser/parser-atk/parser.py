@@ -44,6 +44,10 @@ def parse(filename):
     p = JsonParseEventsWriterBackend(metaInfoEnv)
     o = open_section
     r = Reader(filename) #  Reader(filename)
+    index = 0 # need to loop over index at some point if more that one conf per
+              # file
+    r.calculator = r.calculators[0]
+    r.atoms = r.configurations_atoms[0]
     p.startedParsingSession(filename, parser_info)
     with o(p, 'section_run'):
         p.addValue('program_name', 'ATK')

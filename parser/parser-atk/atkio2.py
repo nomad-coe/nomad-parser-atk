@@ -1,7 +1,7 @@
 from copy import copy
 from scipy.io.netcdf import netcdf_file
 from parser_configurations import parse_configuration as p_conf
-from parser_calculator import parse_calculator as p_calc 
+from parser_calculator import parse_calculator as p_calc
 import re
 
 class X:
@@ -30,22 +30,11 @@ class Reader:
                 gIDs.append(gID)
 
         self.gIDs = gIDs
-        pm = re.compile('MoleculeConfiguration(?P<gid>_gID[0-9][0-9][0-9])$')
-        pb = re.compile('BulkConfiguration(?P<gid>_gID[0-9][0-9][0-9])$')
-        for key in self.f.variables.keys():
-            s = re.search(pm, key)
-            if s is not None:
-                self.conf_gID = s.group('gid')
-                break
-            s = re.search(pb, key)
-            if s is not None:
-                self.conf_gID = s.group('gid')
-                break
-
         self.atk_version = self.f.version[4:].decode('utf-8')
         self.finger_prints = [x.split(':') for x in
                               self.f.fingerprint_table.\
                               decode('utf-8').split('#')][:-1]
+        print(self.finger_prints)
         self.extract_common_concepts() #  atoms
         self.extract_calculator() # extract the calculator
         self.extract_total_energy() # look for total energy 
@@ -54,6 +43,9 @@ class Reader:
         self.extract_bandstructure()  # look for band structures
 
     def print_keys(self):
+        """
+            only for debuging
+        """
         print('---dimensions---')
         for k in self.f.dimensions.keys():
             print(k)
@@ -67,7 +59,9 @@ class Reader:
         self.wave_functions = X('wave_functions')
 
     def extract_calculator(self):
-        self.calculator = p_calc(self.f, self.conf_name)
+        self.calculators = []
+        for configuration in self.configurations:
+            self.calculators.append(p_calc(self.f, configuration))
 
     def extract_bandstructure(self):
         self.wave_functions = X('wave_functions')
@@ -114,21 +108,20 @@ class Reader:
         ham.e_tot = ham.e_kin + ham.e_xc + ham.e_hartree + ham.e_S
 
     def extract_common_concepts(self):
+        #configurations could also be extraced from fingerprint_table
+        self.configurations = []
+        self.configurations_gIDs = []
         pm = re.compile('MoleculeConfiguration(?P<gid>_gID[0-9][0-9][0-9])$')
         pb = re.compile('BulkConfiguration(?P<gid>_gID[0-9][0-9][0-9])$')
         for key in self.f.variables.keys():
-            s = re.search(pm, key)
-            if s is not None:
-                self.conf_gID = s.group('gid')
-                self.conf_name = s.group()
-                break
-            s = re.search(pb, key)
-            if s is not None:
-                self.conf_gID = s.group('gid')
-                self.conf_name = s.group()
-                break
-        print(self.conf_name)
-        self.atoms = p_conf(self.f, self.conf_name)
+            for p in [pm, pb]:
+                s = re.search(p, key)
+                if s is not None:
+                    self.configurations_gIDs.append(s.group('gid'))
+                    self.configurations.append(s.group())
+        self.configurations_atoms = []
+        for conf in self.configurations:
+            self.configurations_atoms.append(p_conf(self.f, conf))
 
 if __name__ == '__main__':
     import sys
@@ -138,5 +131,7 @@ if __name__ == '__main__':
     #print(r.atoms)
     print(r.atk_version)
     print(r.hamiltonian.e_tot)
-    print(r.calculator)
+    print(r.calculators)
+    print(r.configurations_atoms)
+    print(r.configurations_atoms)
 

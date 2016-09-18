@@ -1,5 +1,5 @@
 from ase.units import Bohr, Angstrom, kB as Kelvin, eV, Hartree
-
+import numpy as np
 
 class PC(list):
     def __init__(self, val):
@@ -8,7 +8,7 @@ class PC(list):
         if type(other) is not list:
             if type(other) is not tuple:
                 return self.val * other
-        out = [o * self.val for o in other]
+        out = (np.asarray(other) * self.val).tolist()
         if type(other) is tuple:
             out = tuple(out)
         return out
