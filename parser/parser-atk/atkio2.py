@@ -2,7 +2,7 @@ from copy import copy
 from scipy.io.netcdf import netcdf_file
 from parser_configurations import parse_configuration as p_conf
 from parser_calculator import parse_calculator as p_calc 
-
+import re
 
 class X:
     def __init__(self, name=None):
@@ -20,19 +20,28 @@ class Reader:
         self.CommonConcepts = X('CommonConcepts')
         self.CommonConcepts.Configurations = X('Configurations')
 
-        if 1:
-            gIDs = []
-            for k in self.f.dimensions.keys():
-                if '_gID' not in k:
-                    continue
-                i = k.index('_gID')
-                gID = int(k[i+4: i+7])
-                if gID not in gIDs:
-                    gIDs.append(gID)
+        gIDs = []
+        for k in self.f.dimensions.keys():
+            if '_gID' not in k:
+                continue
+            i = k.index('_gID')
+            gID = int(k[i+4: i+7])
+            if gID not in gIDs:
+                gIDs.append(gID)
 
-            self.gIDs = gIDs
+        self.gIDs = gIDs
+        pm = re.compile('MoleculeConfiguration(?P<gid>_gID[0-9][0-9][0-9])$')
+        pb = re.compile('BulkConfiguration(?P<gid>_gID[0-9][0-9][0-9])$')
+        for key in self.f.variables.keys():
+            s = re.search(pm, key)
+            if s is not None:
+                self.conf_gID = s.group('gid')
+                break
+            s = re.search(pb, key)
+            if s is not None:
+                self.conf_gID = s.group('gid')
+                break
 
-        self.conf_gID = '_gID000'
         self.atk_version = self.f.version[4:].decode('utf-8')
         self.finger_prints = [x.split(':') for x in
                               self.f.fingerprint_table.\
@@ -58,17 +67,7 @@ class Reader:
         self.wave_functions = X('wave_functions')
 
     def extract_calculator(self):
-        #p_calc(self)
-        # dummy until p_calc stops crashing!
-        name = self.CommonConcepts.Configurations.name + self.conf_gID
-        self.calculator = p_calc(self.f, name)
-#        self.calculator = X('calculator')
-#        self.calculator.basis = 'dzp'
-#        self.calculator.method = 'DFT'
-#        self.calculator.xc = 'LDA'
-#        self.calculator.charge = 0
-#        self.calculator.temp = 300.0  # icp
-#        self.calculator.dens_tolerance = 0.0001 # icp
+        self.calculator = p_calc(self.f, self.conf_name)
 
     def extract_bandstructure(self):
         self.wave_functions = X('wave_functions')
@@ -115,15 +114,21 @@ class Reader:
         ham.e_tot = ham.e_kin + ham.e_xc + ham.e_hartree + ham.e_S
 
     def extract_common_concepts(self):
-        if 'BulkConfiguration_gID000_dimension' in self.f.dimensions.keys():
-            self.CommonConcepts.Configurations = X('BulkConfiguration')
-        elif 'MoleculeConfiguration_gID000_dimension' in \
-                self.f.dimensions.keys():
-            self.CommonConcepts.Configurations = X('MoleculeConfiguration')
-        else:
-            assert 0, 'Not a Bulk or Molecule configurations found!'
-
-        self.atoms = p_conf(self.f, self.CommonConcepts.Configurations.name)
+        pm = re.compile('MoleculeConfiguration(?P<gid>_gID[0-9][0-9][0-9])$')
+        pb = re.compile('BulkConfiguration(?P<gid>_gID[0-9][0-9][0-9])$')
+        for key in self.f.variables.keys():
+            s = re.search(pm, key)
+            if s is not None:
+                self.conf_gID = s.group('gid')
+                self.conf_name = s.group()
+                break
+            s = re.search(pb, key)
+            if s is not None:
+                self.conf_gID = s.group('gid')
+                self.conf_name = s.group()
+                break
+        print(self.conf_name)
+        self.atoms = p_conf(self.f, self.conf_name)
 
 if __name__ == '__main__':
     import sys

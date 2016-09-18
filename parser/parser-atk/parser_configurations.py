@@ -47,8 +47,8 @@ class BulkConfiguration:
         self.atoms = atoms
 
 
-def parse_configuration(fd, conftype='BulkConfiguration', verbose=False):
-    code = fd.variables[conftype + '_gID000'].data[:].copy()
+def parse_configuration(fd, confname, verbose=False):
+    code = fd.variables[confname].data[:].copy()
     code = code.tostring().decode("utf-8")
     s = re.search('\s*(?P<name>[0-9a-zA-Z_]+)\s*=\s*BulkConfiguration\(', code)
     name = s.group('name')
