@@ -1,12 +1,14 @@
 from __future__ import print_function
 
 short_names = {
-        'LDA': 'LDA_X+LDA_C_PW',
-        'PW91': 'GGA_X_PW91+GGA_C_PW91',
-        'PBE': 'GGA_X_PBE+GGA_C_PBE',
-        'PBEsol': 'GGA_X_PBE_SOL+GGA_C_PBE_SOL',
+        'LDA.RPA': 'LDA_X+LDA_C_RPA',
+        'LDA.PZ': 'LDA_X+LDA_C_PZ',
+        'LDA.PW': 'LDA_X+LDA_C_PW',
+        'GGA.PW91': 'GGA_X_PW91+GGA_C_PW91',
+        'GGA.PBE': 'GGA_X_PBE+GGA_C_PBE',
+        'GGA.PBES': 'GGA_X_PBE_SOL+GGA_C_PBE_SOL',
         'revPBE': 'GGA_X_PBE_R+GGA_C_PBE',
-        'RPBE': 'GGA_X_RPBE+GGA_C_PBE',
+        'GGA.RPBE': 'GGA_X_RPBE+GGA_C_PBE',
         'BLYP': 'GGA_X_B88+GGA_C_LYP',
         'HCTH407': 'GGA_XC_HCTH_407',
         'WC': 'GGA_X_WC+GGA_C_PBE',

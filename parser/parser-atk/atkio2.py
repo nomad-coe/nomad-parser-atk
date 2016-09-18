@@ -1,7 +1,8 @@
 from copy import copy
 from scipy.io.netcdf import netcdf_file
 from parser_configurations import parse_configuration as p_conf
-#from parser_calculator import parse_calculator as p_calc
+from parser_calculator import parse_calculator as p_calc 
+
 
 class X:
     def __init__(self, name=None):
@@ -19,7 +20,7 @@ class Reader:
         self.CommonConcepts = X('CommonConcepts')
         self.CommonConcepts.Configurations = X('Configurations')
 
-        if 0:
+        if 1:
             gIDs = []
             for k in self.f.dimensions.keys():
                 if '_gID' not in k:
@@ -31,16 +32,17 @@ class Reader:
 
             self.gIDs = gIDs
 
+        self.conf_gID = '_gID000'
         self.atk_version = self.f.version[4:].decode('utf-8')
         self.finger_prints = [x.split(':') for x in
                               self.f.fingerprint_table.\
                               decode('utf-8').split('#')][:-1]
         self.extract_common_concepts() #  atoms
-        self.extract_total_energy()
-        self.extract_calculator()
-        self.extract_results()
-        self.extract_wave_functions()
-        self.extract_bandstructure()
+        self.extract_calculator() # extract the calculator
+        self.extract_total_energy() # look for total energy 
+        self.extract_results()  # look for results, forces, stress etc
+        self.extract_wave_functions() # look for eigenvalues, wave functions
+        self.extract_bandstructure()  # look for band structures
 
     def print_keys(self):
         print('---dimensions---')
@@ -51,20 +53,22 @@ class Reader:
             print(k)
 
     def extract_wave_functions(self):
-        """ extract eigenvalues, occupations and wave_functions 
+        """ extract eigenvalues, occupations and wave_functions
         """
         self.wave_functions = X('wave_functions')
 
     def extract_calculator(self):
         #p_calc(self)
         # dummy until p_calc stops crashing!
-        self.calculator = X('calculator')
-        self.calculator.basis = 'dzp'
-        self.calculator.method = 'DFT'
-        self.calculator.xc = 'LDA'
-        self.calculator.charge = 0
-        self.calculator.temp = 300.0  # icp
-        self.calculator.dens_tolerance = 0.0001 # icp
+        name = self.CommonConcepts.Configurations.name + self.conf_gID
+        self.calculator = p_calc(self.f, name)
+#        self.calculator = X('calculator')
+#        self.calculator.basis = 'dzp'
+#        self.calculator.method = 'DFT'
+#        self.calculator.xc = 'LDA'
+#        self.calculator.charge = 0
+#        self.calculator.temp = 300.0  # icp
+#        self.calculator.dens_tolerance = 0.0001 # icp
 
     def extract_bandstructure(self):
         self.wave_functions = X('wave_functions')
@@ -129,5 +133,5 @@ if __name__ == '__main__':
     #print(r.atoms)
     print(r.atk_version)
     print(r.hamiltonian.e_tot)
-    print
+    print(r.calculator)
 

@@ -5,6 +5,10 @@ import re
 Angstrom = 1
 Hydrogen = type('Hydrogen', (object,), {})
 Hydrogen.symbol = 'H'
+Helium= type('Helium', (object,), {})
+Helium.symbol = 'H'
+Lithium= type('Lithium', (object,), {})
+Lithium.symbol = 'Si'
 Oxygen = type('Oxygen', (object,), {})
 Oxygen.symbol = 'O'
 Silicon = type('Silicon', (object,), {})

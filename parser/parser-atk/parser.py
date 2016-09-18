@@ -51,7 +51,7 @@ def parse(filename):
         p.addValue('program_basis_set_type', 'numeric AOs')
         with o(p, 'section_basis_set_atom_centered'):
             p.addValue('basis_set_atom_centered_short_name',
-                      r.calculator.basis)
+                       'ATK LCAO basis')
         with o(p, 'section_system') as system_gid:
             p.addArrayValues('simulation_cell',
                              c(r.atoms.cell, 'angstrom'))
@@ -72,16 +72,17 @@ def parse(filename):
             pass
         with o(p, 'section_method') as method_gid:
             p.addValue('relativity_method', 'pseudo_scalar_relativistic')
-            p.addValue('electronic_structure_method', r.calculator.method)
+            p.addValue('electronic_structure_method', 'DFT')
             #p.addValue('scf_threshold_energy_change',
             #           c(r.convergence.scf_energy, 'eV')) # eV / electron
             p.addValue('smearing_kind', 'fermi')
             p.addRealValue('smearing_width',
-                           c(r.calculator.temp, 'K'))
+                           c(r.calculator.numerical_accuracy_parameters.\
+                             electron_temperature, 'K'))
             p.addRealValue('total_charge', r.calculator.charge)
             with o(p, 'section_XC_functionals'):
                 p.addValue('XC_functional_name',
-                           get_libxc_name(r.calculator.xc))
+                           get_libxc_name(r.calculator.exchange_correlation))
         with o(p, 'section_single_configuration_calculation'):
             p.addValue('single_configuration_calculation_to_system_ref',
                        system_gid)
