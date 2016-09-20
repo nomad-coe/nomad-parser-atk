@@ -1,0 +1,74 @@
+from ase import Atoms
+from ase.build import bulk
+
+
+class UnitCell:
+    def __init__(self, a, b, c, origin=None):
+        self.cell = [a, b, c]
+
+
+class FaceCenteredCubic:
+    def __init__(self, a):
+        self.cell = bulk('X', crystalstructure='fcc', a=a).get_cell()
+
+    def primitiveVectors(self):
+        return self.cell
+
+
+class BodyCenteredCubic:
+    def __init__(self, a):
+        self.cell = bulk('X', crystalstructure='bcc', a=a).get_cell()
+
+    def primitiveVectors(self):
+        return self.cell
+
+
+class BulkConfiguration:
+    def __init__(self, bravais_lattice, elements, cartesian_coordinates=None,
+                 fractional_coordinates=None, ghost_atoms=None,
+                 velocities=None, tag_data=None, fast_init=False):
+        if elements is None:
+            symbols = None
+        else:
+            symbols = [e.symbol() for e in elements]
+        if cartesian_coordinates is not None:
+            positions = cartesian_coordinates
+            scale_atoms = False
+        elif fractional_coordinates is not None:
+            positions = fractional_coordinates
+            scale_atoms = True
+        else:
+            positions = None
+            scale_atoms = False
+        pbc = True
+        atoms = Atoms(symbols, positions, pbc=pbc)
+        atoms.set_cell(bravais_lattice.cell, scale_atoms=scale_atoms)
+        atoms.ghost_atoms = ghost_atoms
+        self.atoms = atoms
+
+
+class MoleculeConfiguration:
+    def __init__(self, elements=None, cartesian_coordinates=None,
+                 fractional_coordinates=None, ghost_atoms=None,
+                 velocities=None, tag_data=None, fast_init=False):
+        if elements is None:
+            symbols = None
+        else:
+            symbols = [e.symbol() for e in elements]
+        if cartesian_coordinates is not None:
+            positions = cartesian_coordinates
+        else:
+            positions = None
+        pbc = False
+        atoms = Atoms(symbols, positions, pbc=pbc)
+        atoms.ghost_atoms = ghost_atoms
+        self.atoms = atoms
+
+
+things = {'UnitCell': UnitCell,
+          'FaceCenteredCubic': FaceCenteredCubic,
+          'BulkConfiguration': BulkConfiguration,
+          'MoleculeConfiguration': MoleculeConfiguration}
+
+conf_types = ['MoleculeConfiguration',
+              'BulkConfiguration']

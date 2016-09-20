@@ -1,67 +1,58 @@
-"""Simple wrapper to atk output files"""
 from scipy.io.netcdf import netcdf_file
-
-
-
-
-class X:
-    def __init__(self, name=None):
-        self.name = name
-
-
-class Atoms:
-    def __init__(self, fd):
-        self.positions = None
-        self.numbers = None
-        self.cell = None
-        self.pbc = None
-
-
-class Hamiltonian:
-    def __init__(self):
-        self.e_entropy = None
-        self.e_kinetic = None
-        self.e_total_free = None
-        self.e_total_extrapolated = None
-        self.e_xc = None
-
-
-class BandPath:
-    def __init__(self):
-        self.labels = None
-        self.eigenvalues = None
-        self.kpts = None
-
-
-class WaveFunctions:
-    def __init__(self):
-        self.occupations
-        self.eigenvalues = None
-        self.ibz_kpts = None
-        self.band_paths = None
-
+from configurations import conf_types
+from parser_configurations2 import parse_configuration
+import re
 
 class Reader:
-    def __init__(self, filename):
-        self.f = netcdf_file(filename)
-        self.v = self.f.variables
-        self.read_atoms()
-        self.read_hamiltonian()
-        self.read_wave_functions()
+    def __init__(self, fname):
+        self.f = netcdf_file(fname, 'r', mmap=True)
+        self.initialize()
 
-        self.xc = None
+    def initialize(self):
+        self.conf_names = self.get_configuration_names()
+        self.calc_names = self.get_calculator_names()
+        self.finger_print_table = self.get_finger_print_table()
 
-    def read_atoms(self):
-        self.atoms = Atoms()
+    def get_configuration_names(self):
+        d = self.f.dimensions
+        conf_names = {}
+        for k in d.keys():
+            for conf_type in conf_types:
+                p = conf_type + '(?P<gID>_gID[0-9][0-9][0-9])_dimension'
+                m = re.search(p, k)
+                if m is not None:
+                    g = m.group('gID')
+                    conf_names[g[1:]] = conf_type + g
+        return conf_names
 
-    def read_hamiltonian(self):
-        self.hamiltonian = Hamiltonian()
+    def get_calculator_names(self):
+        d = self.f.dimensions
+        calc_names = {}
+        for k in d.keys():
+            for conf_type in conf_types:
+                p = conf_type + \
+                        '(?P<gID>_gID[0-9][0-9][0-9])_calculator_dimension'
+                m = re.search(p, k)
+                if m is not None:
+                    g = m.group('gID')
+                    calc_names[g[1:]] = conf_type + g + '_calculator'
+        return calc_names
 
-    def read_wave_functions(self):
-        self.wave_functions = WaveFunctions()
+    def get_finger_print_table(self):
+        table = {}
+        if hasattr(self.f, 'fingerprint_table'):
+            fpt = fd.fingerprint_table
+            for fpg in fpt.split('#')[:-1]:
+                fp, g = fpg.split(':')[:2]
+                table[g] = fp
+        return table
 
-    def get_number_of_structures(self):
-        """ Several structures could in principle be in one file
-            how many we are dealing with
-        """
-        return 1
+    def get_number_of_configurations(self):
+        return len(self.conf_names)
+
+    def get_atoms(self):
+
+if __name__ == '__main__':
+    r = Reader('h2.nc')
+    print(r.get_configuration_names())
+    print(r.get_finger_print_table())

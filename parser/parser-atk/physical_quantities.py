@@ -1,7 +1,7 @@
-from ase.units import Bohr, Angstrom, kB as Kelvin, eV, Hartree
+import ase.units as au
 import numpy as np
 
-class PC(list):
+class PhysicalQuantity(list):
     def __init__(self, val):
         self.val = val
     def __mul__(self, other):
@@ -17,12 +17,17 @@ class PC(list):
     def __repr__(self):
         return format(self.val)
 
-
-eV = PC(eV)
-Angstrom = PC(Angstrom)
-Hartree = PC(Hartree)
-Bohr = PC(Bohr)
-Kelvin = PC(Kelvin)
+eV = PhysicalQuantity(au.eV)
+Angstrom = PhysicalQuantity(au.Angstrom)
+Hartree = PhysicalQuantity(au.Hartree)
+Bohr = PhysicalQuantity(au.Bohr)
+Kelvin = PhysicalQuantity(au.kB)
 Hour = 1
-
-
+amu = PhysicalQuantity(1.0)
+things = {'eV': eV,
+          'Angstrom': Angstrom,
+          'Hartree': Hartree,
+          'Bohr': Bohr,
+          'Kelvin': Kelvin,
+          'Hour': 1,
+          'amu': amu}
