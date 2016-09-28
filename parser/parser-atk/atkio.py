@@ -1,19 +1,32 @@
 from scipy.io.netcdf import netcdf_file
 from configurations import conf_types
 from parser_configurations2 import parse_configuration
+from parser_calculator import parse_calculator
 import re
 
 class Reader:
     def __init__(self, fname):
+        self.atoms_x = {} # like {'gID0001': Atoms('H2')}
+        self.calculator_x = {} # like {'gID0001': LCAOCalculator}
         self.f = netcdf_file(fname, 'r', mmap=True)
         self.initialize()
+        gids = self.calc_names.keys()
+        for gid in gids:
+            conf_name = self.conf_names[gid]
+            calc_name = self.calc_names[gid]
+            fpt = self.finger_print_table[gid]
+            self.atoms_x[gid] = parse_configuration(self.f, conf_name)
+            self.calculator_x[gid] = parse_calculator(self.f, calc_name)
 
     def initialize(self):
-        self.conf_names = self.get_configuration_names()
-        self.calc_names = self.get_calculator_names()
-        self.finger_print_table = self.get_finger_print_table()
+        self.conf_names = self._read_configuration_names()
+        self.calc_names = self._read_calculator_names()
+        self.finger_print_table = self._read_finger_print_table()
 
-    def get_configuration_names(self):
+    def _read_configuration_names(self):
+        """ find the configuration names in the nc files,
+        i.e. {'gID001': 'BulkConfiguration_gID001'}
+        """
         d = self.f.dimensions
         conf_names = {}
         for k in d.keys():
@@ -25,7 +38,7 @@ class Reader:
                     conf_names[g[1:]] = conf_type + g
         return conf_names
 
-    def get_calculator_names(self):
+    def _read_calculator_names(self):
         d = self.f.dimensions
         calc_names = {}
         for k in d.keys():
@@ -38,10 +51,10 @@ class Reader:
                     calc_names[g[1:]] = conf_type + g + '_calculator'
         return calc_names
 
-    def get_finger_print_table(self):
+    def _read_finger_print_table(self):
         table = {}
         if hasattr(self.f, 'fingerprint_table'):
-            fpt = fd.fingerprint_table
+            fpt = self.f.fingerprint_table.decode('utf-8')
             for fpg in fpt.split('#')[:-1]:
                 fp, g = fpg.split(':')[:2]
                 table[g] = fp
@@ -50,9 +63,13 @@ class Reader:
     def get_number_of_configurations(self):
         return len(self.conf_names)
 
-    def get_atoms(self):
+    def get_atoms(self, n=-1):
+        key = [key for key in sorted(self.atoms_x.keys(), reverse=True)][n]
+        return self.atoms_x[key] 
 
 if __name__ == '__main__':
-    r = Reader('h2.nc')
-    print(r.get_configuration_names())
-    print(r.get_finger_print_table())
+    import sys
+    r = Reader(sys.argv[1])
+    for key,value in r.atoms_x.items():
+        print(key,value)
+    print(r.get_atoms(0))
