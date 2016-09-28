@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import numpy as np
 from ase import units
 from ase.data import chemical_symbols
-from atkio2 import Reader
+from atkio import Reader
 from scipy.io.netcdf import netcdf_file
 from ase.data import atomic_masses
 from ase.units import Rydberg
@@ -46,8 +46,8 @@ def parse(filename):
     r = Reader(filename) #  Reader(filename)
     index = 0 # need to loop over index at some point if more that one conf per
               # file
-    r.calculator = r.calculators[0]
-    r.atoms = r.configurations_atoms[0]
+    r.calculator = r.get_calculator(index)
+    r.atoms = r.get_atoms(index)
     p.startedParsingSession(filename, parser_info)
     with o(p, 'section_run'):
         p.addValue('program_name', 'ATK')
