@@ -9,15 +9,18 @@ SphericalSymmetric = 'SphericalSymmetric'
 
 
 LDA = type('LDA', (object,), {'PZ': 'LDA.PZ',
-                              'PW': 'LDA.PW'})()
+                              'PW': 'LDA.PW',
+                              'RPA': 'LDA.RPA'})()
 
 GGA = type('GGA', (object,), {'PBE': 'GGA.PBE',
                               'RPBE': 'GGA.RPBE',
-                              'PW91': 'GGA.PW91'})()
+                              'PW91': 'GGA.PW91',
+                              'PBES': 'GGA.PBES'})()
 
 ptable = {name: symbol for symbol, name in zip(data.chemical_symbols,
                                                data.atomic_names)}
 PeriodicTable = type('PeriodicTable', (object,), ptable)()
+
 Preconditioner = type('Preconditioner', (object,), {'Off': 'Off',
 
                                                     'On': 'On'})
@@ -28,11 +31,14 @@ Preconditioner = type('Preconditioner', (object,), {'Off': 'Off',
 # class LCAOCalculator(object):
 #     def __init__(self, basis_set=None, ...)
 #
-# is easily done, but a bit more work at the moment
+# is easily done, but a bit more work at the moment...
 #
 def init(self, *args, **kwargs):
+    #if len(args)>0:
+    #    print(*args)
+    #assert len(args) == 0
     self.args = args
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
         setattr(self, key, value)
 
 
@@ -42,23 +48,31 @@ clss = ['LCAOCalculator', 'BasisSet', 'ConfinedOrbital', 'CheckpointHandler',
         'NumericalAccuracyParameters', 'MonkhorstPackGrid',
         'NormConservingPseudoPotential', 'AnalyticalSplit', 'ConfinedOrbital',
         'PolarizationOrbital', 'PulayMixer']
+
 for cls in clss:
     code = cls + ' = type("' + cls + '", (object,)' + ', {"__init__": init})'
     exec(code)
 
 
-def parse_calculator(fd, conf='BulkConfiguration_gID000', verbose=False):
-    """conf: the configuratio the calcualtor refers to
+def parse_calculator(fd, calcname):
+    """calc: the configuratio the calcualtor refers to
+       The name of the calculator in the nc-file is
+       conf_calculator, fx BulkConfiguration_gID000_calculator
     """
-    code = fd.variables[conf + '_calculator'].data[:].copy()
+    code = fd.variables[calcname].data[:].copy()
     code = code.tostring().decode("utf-8")
-    s = re.search('\s*(?P<name>[0-9a-zA-Z_]+)\s*=\s*LCAOCalculator\(', code)
-    name = s.group('name')
+    if 1:
+        print(code)
+    #s = re.search('\s*(?P<name>[0-9a-zA-Z_]+)\s*=\s*LCAOCalculator\(', code)
+    #name = s.group('name')
     exec(code)
-    calc = (locals()[name])
-    return calc
+    for obj in locals().values():
+        if isinstance(obj, LCAOCalculator):
+            return obj
+    assert 0, 'No calculator found'
 
 if __name__ == '__main__':
     from scipy.io.netcdf import netcdf_file
     fd = netcdf_file('Water.nc', 'r')
-    calc = parse_calculator(fd)
+    calc = parse_calculator(fd, 'BulkConfiguration_gID000_calculator')
+    print(dir(calc))

@@ -15,7 +15,6 @@ Silicon = type('Silicon', (object,), {})
 Silicon.symbol = 'Si'
 
 
-
 class UnitCell:
     def __init__(self, a, b, c, origin=None):
         self.cell = [a, b, c]
@@ -64,5 +63,5 @@ if __name__ == '__main__':
     import re
     from scipy.io.netcdf import netcdf_file
     fd = netcdf_file('Water.nc', 'r')
-    atoms = parse_configuration(fd, verbose=True)
+    atoms = parse_configuration(fd, 'BulkConfiguration_gID000', verbose=True)
     print(atoms)

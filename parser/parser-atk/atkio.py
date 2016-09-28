@@ -19,6 +19,11 @@ class Reader:
             self.calculator_x[gid] = parse_calculator(self.f, calc_name)
 
     def initialize(self):
+        """Read the names of the variables in the netcdf file for
+           configurations and calculators and setup
+           the finger print table which maps between calculated
+           quantities and configurations.
+        """
         self.conf_names = self._read_configuration_names()
         self.calc_names = self._read_calculator_names()
         self.finger_print_table = self._read_finger_print_table()
