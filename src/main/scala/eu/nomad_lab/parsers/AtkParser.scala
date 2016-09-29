@@ -26,13 +26,11 @@ object AtkParser extends SimpleExternalParserGenerator(
     "${mainFilePath}"),
   mainFileRe = "".r,
   resList = Seq(
-    "parser-atk/atkio2.py",
     "parser-atk/atkio.py",
     "parser-atk/configurations.py",
     "parser-atk/libxc_names.py",
     "parser-atk/parser_atk.py",
     "parser-atk/parser_calculator.py",
-    "parser-atk/parser_configurations2.py",
     "parser-atk/parser_configurations.py",
     "parser-atk/periodic_table.py",
     "parser-atk/physical_quantities.py",
