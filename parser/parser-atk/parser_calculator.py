@@ -47,7 +47,7 @@ clss = ['LCAOCalculator', 'BasisSet', 'ConfinedOrbital', 'CheckpointHandler',
         'FastFourierSolver', 'IterationControlParameters',
         'NumericalAccuracyParameters', 'MonkhorstPackGrid',
         'NormConservingPseudoPotential', 'AnalyticalSplit', 'ConfinedOrbital',
-        'PolarizationOrbital', 'PulayMixer']
+        'PolarizationOrbital', 'PulayMixer', 'HydrogenOrbital']
 
 for cls in clss:
     code = cls + ' = type("' + cls + '", (object,)' + ', {"__init__": init})'

@@ -118,7 +118,10 @@ class Reader:
         return table
 
     def get_number_of_configurations(self):
-        return len(self.conf_names)
+        return len(self.atoms_x)
+
+    def get_number_of_calculators(self):
+        return len(self.calculator_x)
 
     def get_atoms(self, n=-1):
         """ASE atoms for sorted gID's
@@ -129,6 +132,8 @@ class Reader:
     def get_calculator(self, n=-1):
         """LCAOCalculator for sorted gID's
         """
+        if len(self.calculator_x) == 0:
+            return None
         key = [key for key in sorted(self.calculator_x.keys(),
                                      reverse=True)][n]
         return self.calculator_x[key]
@@ -138,5 +143,7 @@ if __name__ == '__main__':
     import sys
     r = Reader(sys.argv[1])
     for key, value in r.atoms_x.items():
-        print(key, value)
+        print(key, type(value))
+    for key, value in r.calculator_x.items():
+        print(key, type(value))
     print(r.get_atoms(0))
