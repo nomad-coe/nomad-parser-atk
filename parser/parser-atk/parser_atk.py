@@ -86,14 +86,12 @@ def parse(filename):
                                c(r.c.numerical_accuracy_parameters.
                                  electron_temperature, 'K'))
                 p.addRealValue('total_charge', r.c.charge)
-                with o(p, 'section_XC_functionals'):
-                    xc = get_libxc_xc_names(r.c.exchange_correlation)
-                    if xc['xc_name'] is not None:
-                        p.addValue('XC_functional_name', xc['xc_name'])
-                    if xc['x_name'] is not None:
-                        p.addValue('XC_functional_name', xc['x_name'])
-                    if xc['c_name'] is not None:
-                        p.addValue('XC_functional_name', xc['c_name'])
+
+                xc_names = get_libxc_xc_names(r.c.exchange_correlation)
+                for name in xc_names.values():
+                    if name is not None:
+                        with o(p, 'section_XC_functionals'):
+                            p.addValue('XC_functional_name', name)
 
             with o(p, 'section_single_configuration_calculation'):
                 p.addValue('single_configuration_calculation_to_system_ref',
