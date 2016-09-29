@@ -7,7 +7,7 @@ def parse_configuration(fd, name, verbose=False):
     """ convert a nanolanguage python script into
     ASE list of atoms.
 
-    Parameters::
+    Parameters:
 
         fd: netcdf_file handle
         name: str (i.e "BulkConfiguration_gID000")
