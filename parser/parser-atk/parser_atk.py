@@ -46,7 +46,7 @@ def parse(filename):
     r = Reader(filename) #  Reader(filename)
     index = 0 # need to loop over index at some point if more that one conf per
               # file
-    r.calculator = r.get_calculator(index)
+    r.c = r.get_calculator(index)
     r.atoms = r.get_atoms(index)
     p.startedParsingSession(filename, parser_info)
     with o(p, 'section_run'):
@@ -81,12 +81,12 @@ def parse(filename):
             #           c(r.convergence.scf_energy, 'eV')) # eV / electron
             p.addValue('smearing_kind', 'fermi')
             p.addRealValue('smearing_width',
-                           c(r.calculator.numerical_accuracy_parameters.\
+                           c(r.c.numerical_accuracy_parameters.\
                              electron_temperature, 'K'))
-            p.addRealValue('total_charge', r.calculator.charge)
+            p.addRealValue('total_charge', r.c.charge)
             with o(p, 'section_XC_functionals'):
                 p.addValue('XC_functional_name',
-                           get_libxc_name(r.calculator.exchange_correlation))
+                           get_libxc_name(r.c.exchange_correlation))
         with o(p, 'section_single_configuration_calculation'):
             p.addValue('single_configuration_calculation_to_system_ref',
                        system_gid)
@@ -97,31 +97,31 @@ def parse(filename):
 #            p.addRealValue('energy_total',
 #                           c(r.hamiltonian.e_tot_extrapolated, 'eV'))
             p.addRealValue('energy_free',
-                           c(r.hamiltonian.e_tot, 'eV'))
-            p.addRealValue('energy_XC', c(r.hamiltonian.e_xc, 'eV'))
+                           c(r.c._hamiltonian.e_total_free, 'eV'))
+            p.addRealValue('energy_XC', c(r.c._hamiltonian.e_xc, 'eV'))
             p.addRealValue('electronic_kinetic_energy',
-                           c(r.hamiltonian.e_kin, 'eV'))
+                           c(r.c._hamiltonian.e_kin, 'eV'))
             p.addRealValue('energy_correction_entropy',
-                           c(r.hamiltonian.e_S, 'eV'))
+                           c(r.c._hamiltonian.e_entropy, 'eV'))
 #            p.addRealValue('energy_reference_fermi',
 #                          c(r.occupations.fermilevel, 'eV'))
-            if hasattr(r.results, 'forces'):
+            if hasattr(r.c._results, 'forces'):
                 p.addArrayValues('atom_forces_free_raw',
-                                 c(r.results.forces, 'eV/angstrom'))
+                                 c(r.c._results.forces, 'eV/angstrom'))
             #if hasattr(r.results, 'magmoms'):
             #    p.addArrayValues('x_gpaw_magnetic_moments',
             #                     r.results.magmoms)
             #    p.addRealValue('x_atk_spin_Sz', r.results.magmoms.sum() / 2.0)
-            if hasattr(r.wave_functions, 'eigenvalues'):
+            if hasattr(r.c._wave_functions, 'eigenvalues'):
                 with o(p, 'section_eigenvalues'):
                     p.addValue('eigenvalues_kind', 'normal')
                     p.addArrayValues('eigenvalues_values',
-                                     c(r.wave_functions.eigenvalues, 'eV'))
+                                     c(r.c._wave_functions.eigenvalues, 'eV'))
                     p.addArrayValues('eigenvalues_occupation',
-                                     r.wave_functions.occupations)
+                                     r.c._wave_functions.occupations)
                     p.addArrayValues('eigenvalues_kpoints',
-                                     r.wave_functions.ibz_kpts)
-            if hasattr(r.wave_functions, 'band_paths'):
+                                     r.c._wave_functions.ibz_kpts)
+            if hasattr(r.c._wave_functions, 'band_paths'):
                 with o(p, 'section_k_band'):
                     for band_path in r.wave_functions.band_paths:
                         with o(p, 'section_k_band_segment'):

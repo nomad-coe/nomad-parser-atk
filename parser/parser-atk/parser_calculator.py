@@ -61,7 +61,7 @@ def parse_calculator(fd, calcname):
     """
     code = fd.variables[calcname].data[:].copy()
     code = code.tostring().decode("utf-8")
-    if 1:
+    if 0:
         print(code)
     #s = re.search('\s*(?P<name>[0-9a-zA-Z_]+)\s*=\s*LCAOCalculator\(', code)
     #name = s.group('name')
