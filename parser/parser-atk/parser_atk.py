@@ -10,7 +10,7 @@ import setup_paths
 from nomadcore.unit_conversion.unit_conversion import convert_unit as cu
 from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
 from nomadcore.parser_backend import JsonParseEventsWriterBackend
-from libxc_names import get_libxc_name
+from libxc_names import get_libxc_xc_names
 
 
 @contextmanager
@@ -87,8 +87,14 @@ def parse(filename):
                                  electron_temperature, 'K'))
                 p.addRealValue('total_charge', r.c.charge)
                 with o(p, 'section_XC_functionals'):
-                    p.addValue('XC_functional_name',
-                               get_libxc_name(r.c.exchange_correlation))
+                    xc = get_libxc_xc_names(r.c.exchange_correlation)
+                    if xc['xc_name'] is not None:
+                        p.addValue('XC_functional_name', xc['xc_name'])
+                    if xc['x_name'] is not None:
+                        p.addValue('XC_functional_name', xc['x_name'])
+                    if xc['c_name'] is not None:
+                        p.addValue('XC_functional_name', xc['c_name'])
+
             with o(p, 'section_single_configuration_calculation'):
                 p.addValue('single_configuration_calculation_to_system_ref',
                            system_gid)
