@@ -1,6 +1,6 @@
 from scipy.io.netcdf import netcdf_file
 from configurations import conf_types
-from parser_configurations2 import parse_configuration
+from parser_configurations import parse_configuration
 from parser_calculator import parse_calculator
 import re
 

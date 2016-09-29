@@ -1,67 +1,55 @@
-from ase import Atoms
-from ase.build import bulk
-import re
-
-Angstrom = 1
-Hydrogen = type('Hydrogen', (object,), {})
-Hydrogen.symbol = 'H'
-Helium= type('Helium', (object,), {})
-Helium.symbol = 'H'
-Lithium= type('Lithium', (object,), {})
-Lithium.symbol = 'Si'
-Oxygen = type('Oxygen', (object,), {})
-Oxygen.symbol = 'O'
-Silicon = type('Silicon', (object,), {})
-Silicon.symbol = 'Si'
+from periodic_table import things as ptab_ns
+from physical_quantities import things as physquan_ns
+from configurations import conf_types, things as confs_ns
 
 
-class UnitCell:
-    def __init__(self, a, b, c, origin=None):
-        self.cell = [a, b, c]
+def parse_configuration(fd, name, verbose=False):
+    """ convert a nanolanguage python script into
+    ASE list of atoms.
 
-class FaceCenteredCubic:
-    def __init__(self, a):
-       self.cell = bulk('X', crystalstructure='fcc', a=a).get_cell()
+    Parameters:
 
+        fd: netcdf_file handle
+        name: str (i.e "BulkConfiguration_gID000")
 
-class BulkConfiguration:
-    def __init__(self, bravais_lattice, elements, cartesian_coordinates=None,
-                 fractional_coordinates=None, ghost_atoms=None,
-                 velocities=None, tag_data=None, fast_init=False):
-        self.bulkconfiguration = True
-        symbols = [e.symbol for e in elements]
-        if cartesian_coordinates is not None:
-            positions = cartesian_coordinates
-            scale_atoms = False
-        elif fractional_coordinates is not None:
-            positions = fractional_coordinates
-            scale_atoms = True
-        else:
-            positions = None
-            scale_atoms = False
-        pbc = True
-        atoms = Atoms(symbols, positions, pbc=pbc)
-        atoms.set_cell(bravais_lattice.cell, scale_atoms=scale_atoms)
-        self.ghost_atoms_indices = ghost_atoms
-        self.atoms = atoms
-
-
-def parse_configuration(fd, confname, verbose=False):
-    code = fd.variables[confname].data[:].copy()
+    """
+    code = fd.variables[name].data[:].copy()
     code = code.tostring().decode("utf-8")
-    s = re.search('\s*(?P<name>[0-9a-zA-Z_]+)\s*=\s*BulkConfiguration\(', code)
-    name = s.group('name')
     if verbose:
-        print('name:', name)
+        print('parsing code:\n------------')
         print(code)
 
-    exec(code)
-    atoms = (locals()[name]).atoms
-    return atoms
+    things = ptab_ns.copy()
+    things.update(physquan_ns)
+    things.update(confs_ns)
+    exec(code, {}, things)
+    for obj in things.values():
+        for conf_type in conf_types:
+            if isinstance(obj, confs_ns[conf_type]):
+                return obj.atoms
+    return -1
+
 
 if __name__ == '__main__':
-    import re
+    from ase.visualize import view
     from scipy.io.netcdf import netcdf_file
-    fd = netcdf_file('Water.nc', 'r')
-    atoms = parse_configuration(fd, 'BulkConfiguration_gID000', verbose=True)
-    print(atoms)
+    import sys
+    fd = netcdf_file(sys.argv[1], 'r')
+    name = 'BulkConfiguration_gID000'
+    atoms = parse_configuration(fd, name)
+    view(atoms)
+#    configurations = {}
+#    fp_gids = fd.fingerprint_table[:].decode('utf-8').split('#')
+#    for c in fp_gids:
+#        if len(c) > 0:
+#            fingerprint, gID = c.split(':')[:2]
+#            gID.strip()
+#            for name in ['BulkConfiguration_' + gID,
+#                         'MoleculeConfiguration_' + gID]:
+#                if name in fd.variables.keys():
+#                    configurations[name] = fingerprint
+#
+#    for name, fingerprint in configurations.items():
+#        print(name+',', fingerprint)
+#        atoms = parse_configuration(fd, name)
+#        view(atoms)
