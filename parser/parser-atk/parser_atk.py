@@ -24,7 +24,6 @@ def open_section(p, name):
 
 def c(value, unit=None):
     """ Dummy function for unit conversion"""
-    return value
     return cu(value, unit)
 
 
