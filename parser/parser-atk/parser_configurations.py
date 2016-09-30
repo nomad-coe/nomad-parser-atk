@@ -15,7 +15,7 @@ def parse_configuration(fd, name, verbose=False):
     """
     code = fd.variables[name].data[:].copy()
     code = code.tostring().decode("utf-8")
-    if verbose:
+    if 0:
         print('parsing code:\n------------')
         print(code)
 

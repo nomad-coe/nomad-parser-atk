@@ -23,11 +23,16 @@ Hartree = PhysicalQuantity(au.Hartree)
 Bohr = PhysicalQuantity(au.Bohr)
 Kelvin = PhysicalQuantity(au.kB)
 Hour = 1
+Degrees = PhysicalQuantity(1.0)
 amu = PhysicalQuantity(1.0)
 things = {'eV': eV,
           'Angstrom': Angstrom,
           'Hartree': Hartree,
           'Bohr': Bohr,
           'Kelvin': Kelvin,
-          'Hour': 1,
+          'Hour': Hour,
+          'Degrees': Degrees,
           'amu': amu}
+
+if __name__ == '__main__':
+    print(Angstrom*4.0)

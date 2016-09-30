@@ -1,4 +1,5 @@
 from ase import Atoms
+from ase.lattice.triclinic import Triclinic as TC
 from ase.build import bulk
 
 
@@ -6,6 +7,13 @@ class UnitCell:
     def __init__(self, a, b, c, origin=None):
         self.cell = [a, b, c]
 
+
+class Triclinic:
+    def __init__(self, a, b, c, alpha, beta, gamma):
+        self.cell = TC(symbol='X', latticeconstant=(a, b, c, alpha,
+                                                    beta, gamma)).get_cell()
+    def primitiveVectors(self):
+        return self.cell
 
 class FaceCenteredCubic:
     def __init__(self, a):
@@ -66,9 +74,14 @@ class MoleculeConfiguration:
 
 
 things = {'UnitCell': UnitCell,
+          'Triclinic': Triclinic,
           'FaceCenteredCubic': FaceCenteredCubic,
           'BulkConfiguration': BulkConfiguration,
           'MoleculeConfiguration': MoleculeConfiguration}
 
 conf_types = ['MoleculeConfiguration',
               'BulkConfiguration']
+
+if __name__ == '__main__':
+    t = Triclinic(4.0, 4.0, 4.0, 90.0, 90.0, 90.0)
+    print(t.primitiveVectors())
