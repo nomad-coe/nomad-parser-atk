@@ -1,4 +1,6 @@
 from scipy.io.netcdf import netcdf_file
+import numpy as np
+from ase.units import Hartree
 from configurations import conf_types
 from parser_configurations import parse_configuration
 from parser_calculator import parse_calculator
@@ -9,6 +11,8 @@ class Reader:
     def __init__(self, fname):
         self.atoms_x = {}  # like {'gID0001': Atoms('H2')}
         self.calculator_x = {}  # like {'gID0001': LCAOCalculator}
+        self._atoms_inp_x = {}  # contains inpyt python code
+        self._calculator_inp_x = {}  # contains input python code
         self.conf_names = None
         self.calc_names = None
         self.f = netcdf_file(fname, 'r', mmap=True)
@@ -19,11 +23,16 @@ class Reader:
             calc_name = self.calc_names[gid]
             self.atoms_x[gid] = parse_configuration(self.f, conf_name)
             self.calculator_x[gid] = parse_calculator(self.f, calc_name)
+            self._calculator_inp_x[gid] = (self.f.variables[calc_name].data[:].
+                                           copy().tostring().decode('utf-8'))
+            self._atoms_inp_x[gid] = (self.f.variables[conf_name].data[:].
+                                      copy().tostring().decode('utf-8'))
 
         # setup hamilton, results, wave_functions attr
         # to calculator to hold results (as in GPAW)
         p_etot_fp = r"^(?P<pref>TotalEnergy_gID[0-9]+)_finger_print"
         p_forc_fp = r"^(?P<pref>Forces_gID[0-9]+)_finger_print"
+        p_mole_fp = r"^(?P<pref>MolecularEnergySpectrum_gID[0-9]+)_finger_print"
 
         for gid in self.calc_names.keys():  # loop over calculators
             calc = self.calculator_x[gid]
@@ -67,8 +76,28 @@ class Reader:
                         r.forces = v[pref +
                                      '_atom_resolved_forces'].data[:].copy()
                     continue
-
-
+                m_fp_mole = re.search(p_mole_fp, name)
+                if m_fp_mole is not None:
+                    pref = m_fp_mole.group('pref')
+                    fp2 = v[pref + '_finger_print'].data[:].copy()
+                    fp2 = fp2.tostring().decode('utf-8')
+                    if fp == fp2:
+                        nspin = v[pref + '_number_of_spin'].data[:].copy()[0]
+                        nspin = int(nspin)
+                        eigs1 = v[pref + '_eigenvalues_up'].data[:].copy()
+                        eigs2 = v[pref + '_eigenvalues_up'].data[:].copy()
+                        if (v[pref + '_eigenvalues_up'].
+                            unit.decode('utf-8') == 'Hartree'):
+                            eigs1 *= Hartree
+                            eigs2 *= Hartree
+                        if nspin == 1:
+                            eigenvalues = eigs1.reshape(1, 1, -1)
+                        elif nspin == 2:
+                            eigenvalues = np.array((eigs1, eigs2))
+                            eigenvalues = eigenvalues.reshape(2, 1, -1)
+                        wf.eigenvalues = eigenvalues
+                    continue
+ 
     def read_names(self):
         """Read the names of the variables in the netcdf file for
            configurations and calculators and setup
@@ -144,6 +173,8 @@ if __name__ == '__main__':
     r = Reader(sys.argv[1])
     for key, value in r.atoms_x.items():
         print(key, type(value))
-    for key, value in r.calculator_x.items():
-        print(key, type(value))
-    print(r.get_atoms(0))
+    for gid, calc in r.calculator_x.items():
+        print(gid, type(calc))
+        print(calc._wave_functions.eigenvalues)
+#    for key, value in r._calculator_inp_x.items():
+#        print(value)

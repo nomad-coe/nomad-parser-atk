@@ -79,8 +79,17 @@ def parse(filename):
             with o(p, 'section_method') as method_gid:
                 p.addValue('relativity_method', 'pseudo_scalar_relativistic')
                 p.addValue('electronic_structure_method', 'DFT')
-                # p.addValue('scf_threshold_energy_change',
-                #           c(r.convergence.scf_energy, 'eV')) # eV / electron
+                #p.addValue('scf_threshold_energy_change',
+                #           c(r.c.c.iteration_control_parameters.
+                #             tolerance, 'eV')) # eV / electron
+                p.addValue('x_atk_density_convergence_criterion',
+                           r.c.iteration_control_parameters.tolerance)
+
+                samp_c = np.array(
+                    (r.c.numerical_accuracy_parameters.k_point_sampling.na,
+                     r.c.numerical_accuracy_parameters.k_point_sampling.nb,
+                     r.c.numerical_accuracy_parameters.k_point_sampling.nc))
+                p.addArrayValues('x_atk_monkhorstpack_sampling', samp_c)
                 p.addValue('smearing_kind', 'fermi')
                 p.addRealValue('smearing_width',
                                c(r.c.numerical_accuracy_parameters.
@@ -126,10 +135,12 @@ def parse(filename):
                         p.addArrayValues('eigenvalues_values',
                                          c(r.c._wave_functions.eigenvalues,
                                            'eV'))
-                        p.addArrayValues('eigenvalues_occupation',
-                                         r.c._wave_functions.occupations)
-                        p.addArrayValues('eigenvalues_kpoints',
-                                         r.c._wave_functions.ibz_kpts)
+                        if hasattr(r.c._wave_functions, 'occupations'):
+                            p.addArrayValues('eigenvalues_occupation',
+                                              r.c._wave_functions.occupations)
+                        if hasattr(r.c._wave_functions, 'ibz_kpts'):
+                            p.addArrayValues('eigenvalues_kpoints',
+                                             r.c._wave_functions.ibz_kpts)
                 if hasattr(r.c._wave_functions, 'band_paths'):
                     with o(p, 'section_k_band'):
                         for band_path in r.wave_functions.band_paths:
