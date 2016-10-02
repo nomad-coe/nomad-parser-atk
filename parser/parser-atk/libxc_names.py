@@ -10,15 +10,11 @@ short_names = {
         'GGA.PW91': 'GGA_X_PW91+GGA_C_PW91',
         'GGA.PBE': 'GGA_X_PBE+GGA_C_PBE',
         'GGA.PBES': 'GGA_X_PBE_SOL+GGA_C_PBE_SOL',
-        'revPBE': 'GGA_X_PBE_R+GGA_C_PBE',
         'GGA.RPBE': 'GGA_X_RPBE+GGA_C_PBE',
         'BLYP': 'GGA_X_B88+GGA_C_LYP',
         'HCTH407': 'GGA_XC_HCTH_407',
         'WC': 'GGA_X_WC+GGA_C_PBE',
         'AM05': 'GGA_X_AM05+GGA_C_AM05',
-        # 'M06-L': 'MGGA_X_M06_L+MGGA_C_M06_L',
-        # 'TPSS': 'MGGA_X_TPSS+MGGA_C_TPSS',
-        # 'revTPSS': 'MGGA_X_REVTPSS+MGGA_C_REVTPSS',
         'mBEEF': 'MGGA_X_MBEEF+GGA_C_PBE_SOL'}
 
 
@@ -62,4 +58,5 @@ def get_libxc_xc_names(name):
 
 if __name__ == '__main__':
     print(get_libxc_xc_names('LDA.PZ'))
-    #print(get_libxc_name('GGA_X_PBE'))
+    print(get_libxc_xc_names('LDA_X'))
+    print(get_libxc_xc_names('GGA_X_PBE'))
