@@ -113,13 +113,13 @@ def parse(filename):
                 xc_names = get_libxc_xc_names(r.c.exchange_correlation)
                 for name in xc_names.values():
                     if name is not None:
-                        with o(p, 'section_XC_functionals'):
-                            p.addValue('XC_functional_name', name)
+                        with o(p, 'section_xc_functionals'):
+                            p.addValue('xc_functional_name', name)
 
             with o(p, 'section_single_configuration_calculation'):
                 p.addValue('single_configuration_calculation_to_system_ref',
                            system_gid)
-                p.addValue('single_configuration_to_calculation_method_ref',
+                p.addValue('single_configuration_calculation_to_method_ref',
                            method_gid)
     #            p.addValue('single_configuration_calculation_converged',
     #                      r.scf.converged)
@@ -128,7 +128,7 @@ def parse(filename):
                 if hasattr(r.c._hamiltonian, 'e_kin'):
                     p.addRealValue('energy_free',
                                    c(r.c._hamiltonian.e_total_free, 'eV'))
-                    p.addRealValue('energy_XC', c(r.c._hamiltonian.e_xc, 'eV'))
+                    p.addRealValue('energy_xc', c(r.c._hamiltonian.e_xc, 'eV'))
                     p.addRealValue('electronic_kinetic_energy',
                                    c(r.c._hamiltonian.e_kin, 'eV'))
                     p.addRealValue('energy_correction_entropy',
@@ -136,8 +136,12 @@ def parse(filename):
         #            p.addRealValue('energy_reference_fermi',
     #                          c(r.occupations.fermilevel, 'eV'))
                 if hasattr(r.c._results, 'forces'):
-                    p.addArrayValues('atom_forces_free_raw',
+                    fId = p.openSection('section_atom_forces')
+                    p.addValue('atom_forces_quantity', 'energy_free')
+                    p.addValue('atom_forces_constraints', 'raw')
+                    p.addArrayValues('atom_forces',
                                      c(r.c._results.forces, 'eV/angstrom'))
+                    p.closeSection('section_atom_forces', fId)
                 #if hasattr(r.results, 'magmoms'):
                 #    p.addArrayValues('x_gpaw_magnetic_moments',
                 #                     r.results.magmoms)
