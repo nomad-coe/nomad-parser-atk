@@ -1,11 +1,11 @@
 # Copyright 2016-2018 Mikkel Strange, Fawzi Mohamed
-# 
+#
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,15 +16,15 @@ from __future__ import division
 import os
 from contextlib import contextmanager
 import numpy as np
+import logging
 from ase import units
 from ase.data import chemical_symbols
-from atkio import Reader
+from atkparser.atkio import Reader
 from ase.data import atomic_masses
-import setup_paths
 from nomadcore.unit_conversion.unit_conversion import convert_unit as cu
 from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
 from nomadcore.parser_backend import JsonParseEventsWriterBackend
-from libxc_names import get_libxc_xc_names
+from atkparser.libxc_names import get_libxc_xc_names
 
 
 @contextmanager
@@ -42,16 +42,28 @@ def c(value, unit=None):
 parser_info = {"name": "parser_atk", "version": "1.0"}
 path = '../../../../nomad-meta-info/meta_info/nomad_meta_info/' +\
         'atk.nomadmetainfo.json'
+import nomad_meta_info
 metaInfoPath = os.path.normpath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), path))
+    os.path.join(os.path.dirname(os.path.abspath(nomad_meta_info.__file__)),
+    "atk.nomadmetainfo.json"))
+metaInfoEnv, warnings = loadJsonFile(
+    filePath = metaInfoPath, dependencyLoader = None,
+    extraArgsHandling = InfoKindEl.ADD_EXTRA_ARGS, uri = None)
 
-metaInfoEnv, warns = loadJsonFile(filePath=metaInfoPath,
-                                  dependencyLoader=None,
-                                  extraArgsHandling=InfoKindEl.ADD_EXTRA_ARGS,
-                                  uri=None)
+class ATKParserWrapper():
+    """ A proper class envolop for running this parser using Noamd-FAIRD infra. """
+    def __init__(self, backend, **kwargs):
+        self.backend_factory = backend
 
+    def parse(self, mainfile):
+        from unittest.mock import patch
+        logging.info('ATK parser started')
+        logging.getLogger('nomadcore').setLevel(logging.WARNING)
+        backend = self.backend_factory(metaInfoEnv)
+        backend = parse_without_class(mainfile, backend)
+        return backend
 
-def parse(filename):
+def parse_without_class(filename, backend):
     r = Reader(filename)
     indices = range(r.get_number_of_calculators())
     for index in indices:
@@ -60,7 +72,7 @@ def parse(filename):
             return
         r.atoms = r.get_atoms(index)
 
-        p = JsonParseEventsWriterBackend(metaInfoEnv)
+        p = backend  # JsonParseEventsWriterBackend(metaInfoEnv)
         o = open_section
         p.startedParsingSession(filename, parser_info)
         with o(p, 'section_run'):
@@ -172,6 +184,7 @@ def parse(filename):
                                                       band_path.kpoints[-1]]))
 
         p.finishedParsingSession("ParseSuccess", None)
+        return p
 
 if __name__ == '__main__':
     import sys

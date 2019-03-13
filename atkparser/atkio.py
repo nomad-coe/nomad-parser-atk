@@ -1,11 +1,11 @@
 # Copyright 2016-2018 Mikkel Strange, Fawzi Mohamed
-# 
+#
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,9 +15,9 @@
 from scipy.io.netcdf import netcdf_file
 import numpy as np
 from ase.units import Hartree
-from configurations import conf_types
-from parser_configurations import parse_configuration
-from parser_calculator import parse_calculator
+from atkparser.configurations import conf_types
+from atkparser.parser_configurations import parse_configuration
+from atkparser.parser_calculator import parse_calculator
 import re
 
 
@@ -111,7 +111,7 @@ class Reader:
                             eigenvalues = eigenvalues.reshape(2, 1, -1)
                         wf.eigenvalues = eigenvalues
                     continue
- 
+
     def read_names(self):
         """Read the names of the variables in the netcdf file for
            configurations and calculators and setup

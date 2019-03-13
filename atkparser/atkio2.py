@@ -1,11 +1,11 @@
 # Copyright 2016-2018 Mikkel Strange, Fawzi Mohamed
-# 
+#
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,8 +14,8 @@
 
 from copy import copy
 from scipy.io.netcdf import netcdf_file
-from parser_configurations import parse_configuration as p_conf
-from parser_calculator import parse_calculator as p_calc
+from atkparser.parser_configurations import parse_configuration as p_conf
+from atkparser.parser_calculator import parse_calculator as p_calc
 import re
 
 class X:
@@ -51,7 +51,7 @@ class Reader:
         print(self.finger_prints)
         self.extract_common_concepts() #  atoms
         self.extract_calculator() # extract the calculator
-        self.extract_total_energy() # look for total energy 
+        self.extract_total_energy() # look for total energy
         self.extract_results()  # look for results, forces, stress etc
         self.extract_wave_functions() # look for eigenvalues, wave functions
         self.extract_bandstructure()  # look for band structures
