@@ -17,7 +17,7 @@ from setuptools import setup, find_packages
 
 def main():
     setup(
-        name='abinitparser',
+        name='atkparser',
         version='0.1',
         description='NOMAD parser implementation for ATK.',
         license='APACHE 2.0',
