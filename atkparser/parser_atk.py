@@ -51,29 +51,29 @@ metaInfoEnv, warnings = loadJsonFile(
     extraArgsHandling = InfoKindEl.ADD_EXTRA_ARGS, uri = None)
 
 class ATKParserWrapper():
-    """ A proper class envolop for running this parser using Noamd-FAIRD infra. """
+    """ A proper class envolop for running this parser using nomad-FAIRDI infra. """
     def __init__(self, backend, **kwargs):
         self.backend_factory = backend
 
     def parse(self, mainfile):
-        from unittest.mock import patch
         logging.info('ATK parser started')
         logging.getLogger('nomadcore').setLevel(logging.WARNING)
         backend = self.backend_factory(metaInfoEnv)
-        backend = parse_without_class(mainfile, backend)
+        parse_without_class(mainfile, backend)
         return backend
 
 def parse_without_class(filename, backend):
+    p = backend  # JsonParseEventsWriterBackend(metaInfoEnv)
+    o = open_section
+
     r = Reader(filename)
     indices = range(r.get_number_of_calculators())
     for index in indices:
         r.c = r.get_calculator(index)
         if r.c is None:
-            return
+            return backend
         r.atoms = r.get_atoms(index)
 
-        p = backend  # JsonParseEventsWriterBackend(metaInfoEnv)
-        o = open_section
         p.startedParsingSession(filename, parser_info)
         with o(p, 'section_run'):
             p.addValue('program_name', 'ATK')
@@ -185,6 +185,13 @@ def parse_without_class(filename, backend):
 
         p.finishedParsingSession("ParseSuccess", None)
         return p
+
+    logging.getLogger('nomadcore').warn('no known calculator found, maybe not a ATK file?')
+    with o(p, 'section_run'):
+        p.addValue('program_name', 'ATK')
+        p.addValue('program_version', r.atk_version)
+    return p
+
 
 if __name__ == '__main__':
     import sys
