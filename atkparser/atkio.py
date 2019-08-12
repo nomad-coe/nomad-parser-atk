@@ -30,9 +30,13 @@ class Reader:
         self.conf_names = None
         self.calc_names = None
         self.f = netcdf_file(fname, 'r', mmap=True)
-        self.atk_version = 'unavailable'
-        # TODO this implementation causes an error, in current SciPy netcdf_file has no .version
-        # self.atk_version = self.f.version[:].decode('utf-8').split()[-1]
+
+        try:
+            # TODO this implementation might causes an error, in current SciPy netcdf_file has no .version
+            self.atk_version = self.f.version[:].decode('utf-8').split()[-1]
+        except Exception as e:
+            self.atk_version = 'unavailable'
+
         self.read_names()
         for gid in self.calc_names.keys():
             conf_name = self.conf_names[gid]
@@ -120,9 +124,11 @@ class Reader:
            the finger print table which maps between calculated
            quantities and configurations.
         """
-        # TODO there are no ._names in this SciPy version
-        # self._names = self.f._names[:].decode('utf-8').split(';')
-        self._names = self.f.variables.keys()  # [:].decode('utf-8').split(';')
+        # TODO there might be are no ._names in new SciPy version
+        try:
+            self._names = self.f._names[:].decode('utf-8').split(';')
+        except Exception:
+            self._names = list(self.f.variables.keys())
         self.conf_names = self._read_configuration_names()
         self.calc_names = self._read_calculator_names()
         self.finger_print_table = self._read_finger_print_table()
