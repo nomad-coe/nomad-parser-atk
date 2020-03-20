@@ -13,7 +13,6 @@
 #   limitations under the License.
 
 from __future__ import division
-import os
 from contextlib import contextmanager
 import numpy as np
 import logging
@@ -22,8 +21,6 @@ from ase.data import chemical_symbols
 from atkparser.atkio import Reader
 from ase.data import atomic_masses
 from nomadcore.unit_conversion.unit_conversion import convert_unit as cu
-from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
-from nomadcore.parser_backend import JsonParseEventsWriterBackend
 from atkparser.libxc_names import get_libxc_xc_names
 
 
@@ -40,15 +37,7 @@ def c(value, unit=None):
 
 
 parser_info = {"name": "parser_atk", "version": "1.0"}
-path = '../../../../nomad-meta-info/meta_info/nomad_meta_info/' +\
-        'atk.nomadmetainfo.json'
-import nomad_meta_info
-metaInfoPath = os.path.normpath(
-    os.path.join(os.path.dirname(os.path.abspath(nomad_meta_info.__file__)),
-    "atk.nomadmetainfo.json"))
-metaInfoEnv, warnings = loadJsonFile(
-    filePath = metaInfoPath, dependencyLoader = None,
-    extraArgsHandling = InfoKindEl.ADD_EXTRA_ARGS, uri = None)
+
 
 class ATKParserWrapper():
     """ A proper class envolop for running this parser using nomad-FAIRDI infra. """
@@ -58,12 +47,13 @@ class ATKParserWrapper():
     def parse(self, mainfile):
         logging.info('ATK parser started')
         logging.getLogger('nomadcore').setLevel(logging.WARNING)
-        backend = self.backend_factory(metaInfoEnv)
+        backend = self.backend_factory('atk.nomadmetainfo.json')
         parse_without_class(mainfile, backend)
         return backend
 
+
 def parse_without_class(filename, backend):
-    p = backend  # JsonParseEventsWriterBackend(metaInfoEnv)
+    p = backend
     o = open_section
 
     r = Reader(filename)
@@ -191,9 +181,3 @@ def parse_without_class(filename, backend):
         p.addValue('program_name', 'ATK')
         p.addValue('program_version', r.atk_version)
     return p
-
-
-if __name__ == '__main__':
-    import sys
-    filename = sys.argv[1]
-    parse(filename)
