@@ -1,0 +1,7 @@
+codeLabel: QuantumATK
+codeLabelStyle: 'capitals: Q, A, T, K'
+codeUrl: https://www.synopsys.com/silicon/quantumatk.html
+parserDirName: dependencies/parsers/atk/
+parserGitUrl: https://gitlab.mpcdf.mpg.de/nomad-lab/parser-atk
+parserSpecific: ''
+tableOfFiles: ''
