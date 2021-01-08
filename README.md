@@ -1,4 +1,4 @@
-This is a NOMAD parser for [QuantumATK](https://www.synopsys.com/silicon/quantumatk.html). It will read QuantumATK input and
+This is a NOMAD parser for [AtomistixToolKit](https://www.synopsys.com/silicon/quantumatk.html). It will read AtomistixToolKit input and
 output files and provide all information in NOMAD's unified Metainfo based Archive format.
 
 ## Preparing code input and output file for uploading to NOMAD
@@ -13,9 +13,13 @@ in the same directory as files that also belong to that entry. Parsers
 might also read information from these auxillary files. This way you can add more files
 to an entry, even if the respective parser/code might not directly support it.
 
-For QuantumATK please provide at least the files from this table if applicable to your
+For AtomistixToolKit please provide at least the files from this table if applicable to your
 calculations (remember that you can provide more files if you want):
 
+|Input Filename| Description|
+|--- | --- |
+|`*.nc` | The NetCDF output is used as the **mainfile** (HDF5 output is currently not yet supported) |
+|`*` | Other ATK input and output files act as auxiliary files that can be downloaded, put are not parsed |
 
 
 To create an upload with all calculations in a directory structure:
@@ -71,10 +75,14 @@ pip install nomad-lab
 Clone the parser project and install it in development mode:
 
 ```
-git clone https://gitlab.mpcdf.mpg.de/nomad-lab/parser-atk parser-atk
-pip install -e parser-atk
+git clone https://gitlab.mpcdf.mpg.de/nomad-lab/parser-atk parser-
+pip install -e parser-
 ```
 
 Running the parser now, will use the parser's Python code from the clone project.
 
+---
+## Parser Specific
+Currently, NOMAD only supports NetCDF output of AtomistixToolKit (ATK) and not the
+HDF5 based output of QuantumATK.
 
