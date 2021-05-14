@@ -90,7 +90,7 @@ class NCParser(FileParser):
         if 'MoleculeConfiguration' in data:
             return atoms
 
-        atoms.pbc = True
+        atoms.pbc = [True, True, True]
 
         lattice = re.search(r'\nlattice = (\w+) *\((.+)\)', data)
         lattice, parameters = lattice.groups() if lattice else ('', '')
@@ -171,11 +171,8 @@ class CalculatorParser(TextParser):
 
 
 class ATKParser(FairdiParser):
-    def __init__(self):
-        super().__init__(
-            name='parsers/atk', code_name='AtomistixToolKit',
-            code_homepage='https://www.synopsys.com/silicon/quantumatk.html',
-            mainfile_name_re=r'^.*\.nc', mainfile_mime_re=r'application/octet-stream')
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.nc_parser = NCParser()
         self.calculator_parser = CalculatorParser()
 
