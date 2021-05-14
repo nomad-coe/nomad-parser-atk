@@ -171,8 +171,11 @@ class CalculatorParser(TextParser):
 
 
 class ATKParser(FairdiParser):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self):
+        super().__init__(
+            name='parsers/atk', code_name='AtomistixToolKit',
+            code_homepage='https://www.synopsys.com/silicon/quantumatk.html',
+            mainfile_name_re=r'^.*\.nc', mainfile_mime_re=r'application/octet-stream')
         self.nc_parser = NCParser()
         self.calculator_parser = CalculatorParser()
 
