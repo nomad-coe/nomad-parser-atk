@@ -21,7 +21,7 @@ import numpy as np
 import re
 import logging
 from scipy.io.netcdf import netcdf_file
-from ase.data import atomic_names, chemical_symbols
+from ase.data import atomic_names
 from ase import lattice as aselattice, Atoms
 
 from nomad.units import ureg
@@ -73,14 +73,20 @@ class NCParser(FileParser):
         if not elements:
             return
 
-        atoms = Atoms(symbols=[chemical_symbols[
-            atomic_names.index(e.strip().title())] for e in elements.group(1).split(',')])
-
         coordinates = re.search(r'coordinates *\= *(\[\s*\[[\s\S]+?\]\s*\])', data)
         if not coordinates:
-            return atoms
-        atoms.positions = np.array([v.split(',') for v in re.findall(
-            rf'\[( *{re_f} *\, *{re_f} *\, *{re_f} *)\]', coordinates.group(1))], dtype=np.dtype(np.float64))
+            return
+
+        try:
+            numbers = [atomic_names.index(e.strip().title()) for e in elements.group(1).split(',')]
+
+            positions = np.array([v.split(',') for v in re.findall(
+                rf'\[( *{re_f} *\, *{re_f} *\, *{re_f} *)\]', coordinates.group(1))], dtype=np.dtype(np.float64))
+
+            atoms = Atoms(numbers=numbers, positions=positions)
+
+        except Exception:
+            return
 
         velocities = re.search(r'velocities *\= *(\[\s*\[[\s\S]+?\]\s*\])', data)
         if velocities:
@@ -90,7 +96,7 @@ class NCParser(FileParser):
         if 'MoleculeConfiguration' in data:
             return atoms
 
-        atoms.pbc = [True, True, True]
+        atoms.set_pbc(True)
 
         lattice = re.search(r'\nlattice = (\w+) *\((.+)\)', data)
         lattice, parameters = lattice.groups() if lattice else ('', '')
