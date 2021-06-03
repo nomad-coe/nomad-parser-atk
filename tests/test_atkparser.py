@@ -48,5 +48,5 @@ def test_scf(parser):
     assert sec_system.atom_labels == ['Si', 'Si']
 
     sec_scc = sec_run.section_single_configuration_calculation[0]
-    assert sec_scc.energy_total.magnitude == approx(-5.73249938e-17)
-    assert sec_scc.energy_XC.magnitude == approx(-3.41975673e-17)
+    assert sec_scc.energy_total.value.magnitude == approx(-5.73249938e-17)
+    assert sec_scc.energy_XC.value.magnitude == approx(-3.41975673e-17)

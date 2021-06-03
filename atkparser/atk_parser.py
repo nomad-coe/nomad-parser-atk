@@ -28,7 +28,7 @@ from nomad.units import ureg
 from nomad.parsing.parser import FairdiParser
 from nomad.parsing.file_parser import FileParser, TextParser, Quantity
 from nomad.datamodel.metainfo.common_dft import Run, BasisSetAtomCentered, Method, XCFunctionals,\
-    System, SingleConfigurationCalculation
+    System, SingleConfigurationCalculation, Energy, Forces
 
 
 class NCParser(FileParser):
@@ -186,7 +186,7 @@ class ATKParser(FairdiParser):
         self.calculator_parser = CalculatorParser()
 
         self._metainfo_map = {
-            'Exchange-Correlation': 'energy_XC', 'Kinetic': 'electronic_kinetic_energy',
+            'Exchange-Correlation': 'energy_XC', 'Kinetic': 'energy_kinetic_electronic',
             'Entropy-Term': 'energy_correction_entropy', 'Electrostatic': 'energy_electrostatic'}
 
         self._xc_functional_map = {
@@ -260,13 +260,16 @@ class ATKParser(FairdiParser):
                 key = self._metainfo_map.get(key)
                 energy_total += val
                 if key is not None:
-                    setattr(sec_scc, key, val)
-            sec_scc.energy_total = energy_total
+                    sec_scc.m_add_sub_section(getattr(
+                        SingleConfigurationCalculation, key), Energy(value=val))
+            sec_scc.m_add_sub_section(SingleConfigurationCalculation.energy_total, Energy(
+                value=energy_total))
 
             # forces
             forces = self.nc_parser.get('forces').get(fingerprint)
             if forces is not None:
-                sec_scc.atom_forces = forces
+                sec_scc.m_add_sub_section(
+                    SingleConfigurationCalculation.forces_total, Forces(value=forces))
 
             return sec_scc
 
