@@ -23,12 +23,18 @@ import logging
 from scipy.io.netcdf import netcdf_file
 from ase.data import atomic_names
 from ase import lattice as aselattice, Atoms
+from ase import Atoms as aseAtoms
 
 from nomad.units import ureg
 from nomad.parsing.parser import FairdiParser
 from nomad.parsing.file_parser import FileParser, TextParser, Quantity
-from nomad.datamodel.metainfo.common_dft import Run, BasisSetAtomCentered, Method, XCFunctionals,\
-    System, SingleConfigurationCalculation, Energy, Forces
+from nomad.datamodel.metainfo.run.run import Run, Program
+from nomad.datamodel.metainfo.run.method import (
+    Method, BasisSet, Electronic, Smearing, DFT, XCFunctional, Functional,
+    BasisSetAtomCentered, MethodReference)
+from nomad.datamodel.metainfo.run.system import System, Atoms, SystemReference
+from nomad.datamodel.metainfo.run.calculation import (
+    Calculation, Energy, EnergyEntry, Forces, ForcesEntry)
 
 
 class NCParser(FileParser):
@@ -83,7 +89,7 @@ class NCParser(FileParser):
             positions = np.array([v.split(',') for v in re.findall(
                 rf'\[( *{re_f} *\, *{re_f} *\, *{re_f} *)\]', coordinates.group(1))], dtype=np.dtype(np.float64))
 
-            atoms = Atoms(numbers=numbers, positions=positions)
+            atoms = aseAtoms(numbers=numbers, positions=positions)
 
         except Exception:
             return
@@ -186,7 +192,7 @@ class ATKParser(FairdiParser):
         self.calculator_parser = CalculatorParser()
 
         self._metainfo_map = {
-            'Exchange-Correlation': 'energy_XC', 'Kinetic': 'energy_kinetic_electronic',
+            'Exchange-Correlation': 'energy_xc', 'Kinetic': 'energy_kinetic_electronic',
             'Entropy-Term': 'energy_correction_entropy', 'Electrostatic': 'energy_electrostatic'}
 
         self._xc_functional_map = {
@@ -208,15 +214,10 @@ class ATKParser(FairdiParser):
         self.nc_parser.logger = self.logger
 
     def parse_configurations(self):
-        sec_run = self.archive.section_run[0]
+        sec_run = self.archive.run[0]
 
         def parse_method(name):
             sec_method = sec_run.m_create(Method)
-
-            sec_method.relativity_method = 'pseudo_scalar_relativistic'
-            sec_method.electronic_structure_method = 'DFT'
-
-            sec_method.smearing_kind = 'fermi'
 
             parameters = self.nc_parser.get('parameters').get(name)
             if parameters is None:
@@ -226,13 +227,24 @@ class ATKParser(FairdiParser):
             self.calculator_parser.mainfile = self.filepath
             self.calculator_parser._file_handler = parameters
 
-            for key, val in self.calculator_parser.items():
-                if val is not None:
-                    setattr(sec_method, key, val)
+            sec_method.electronic = Electronic(
+                relativity_method='pseudo_scalar_relativistic',
+                charge=self.calculator_parser.get('charge', 0.0),
+                smearing=Smearing(
+                    kind='fermi', width=self.calculator_parser.get('smearing_width', 0.0)))
 
+            sec_dft = sec_method.m_create(DFT)
+            sec_xc_functional = sec_dft.m_create(XCFunctional)
             for xc_functional in self._xc_functional_map.get(self.calculator_parser.get('xc_functional'), []):
-                sec_xc = sec_method.m_create(XCFunctionals)
-                sec_xc.XC_functional_name = xc_functional
+                if '_XC' in xc_functional:
+                    sec_xc_functional.contributions.append(Functional(name=xc_functional))
+                elif '_X' in xc_functional:
+                    sec_xc_functional.exchange.append(Functional(name=xc_functional))
+                elif '_C' in xc_functional:
+                    sec_xc_functional.correlation.append(Functional(name=xc_functional))
+
+            sec_method.basis_set.append(
+                BasisSet(atom_centered=BasisSetAtomCentered(name='ATK LCAO basis')))
 
             return sec_method
 
@@ -241,35 +253,36 @@ class ATKParser(FairdiParser):
                 return
 
             sec_system = sec_run.m_create(System)
-            sec_system.atom_labels = atoms.get_chemical_symbols()
-            sec_system.atom_positions = atoms.get_positions() * ureg.angstrom
-            sec_system.lattice_vectors = atoms.get_cell().array * ureg.angstrom
-            sec_system.configuration_periodic_dimensions = atoms.get_pbc()
+            sec_atoms = sec_system.m_create(Atoms)
+            sec_atoms.labels = atoms.get_chemical_symbols()
+            sec_atoms.positions = atoms.get_positions() * ureg.angstrom
+            sec_atoms.lattice_vectors = atoms.get_cell().array * ureg.angstrom
+            sec_atoms.periodic = atoms.get_pbc()
             velocities = atoms.get_velocities()
             if velocities:
-                sec_system.atom_velocities = velocities * (ureg.angstrom / ureg.fs)
+                sec_atoms.velocities = velocities * (ureg.angstrom / ureg.fs)
 
             return sec_system
 
         def parse_scc(fingerprint):
-            sec_scc = sec_run.m_create(SingleConfigurationCalculation)
+            sec_scc = sec_run.m_create(Calculation)
 
             # energies
+            sec_energy = sec_scc.m_create(Energy)
             energy_total = 0.
             for key, val in self.nc_parser.get('energies').get(fingerprint, {}).items():
                 key = self._metainfo_map.get(key)
                 energy_total += val
                 if key is not None:
-                    sec_scc.m_add_sub_section(getattr(
-                        SingleConfigurationCalculation, key), Energy(value=val))
-            sec_scc.m_add_sub_section(SingleConfigurationCalculation.energy_total, Energy(
-                value=energy_total))
+                    key = key.replace('energy_', '')
+                    sec_energy.m_add_sub_section(getattr(Energy, key), EnergyEntry(value=val))
+            sec_energy.total = EnergyEntry(value=energy_total)
 
             # forces
             forces = self.nc_parser.get('forces').get(fingerprint)
             if forces is not None:
-                sec_scc.m_add_sub_section(
-                    SingleConfigurationCalculation.forces_total, Forces(value=forces))
+                sec_forces = sec_scc.m_create(Forces)
+                sec_forces.total = ForcesEntry(value=forces)
 
             return sec_scc
 
@@ -279,9 +292,9 @@ class ATKParser(FairdiParser):
             fingerprint = self.nc_parser._fingerprints.get('gID%s' % name.split('gID')[-1])
             sec_scc = parse_scc(fingerprint)
             if sec_system is not None:
-                sec_scc.single_configuration_calculation_to_system_ref = sec_system
+                sec_scc.system_ref.append(SystemReference(value=sec_system))
             if sec_method is not None:
-                sec_scc.single_configuration_to_calculation_method_ref = sec_method
+                sec_scc.method_ref.append(MethodReference(value=sec_method))
 
     def parse(self, filepath, archive, logger):
         self.filepath = os.path.abspath(filepath)
@@ -292,11 +305,7 @@ class ATKParser(FairdiParser):
 
         sec_run = self.archive.m_create(Run)
         sec_run.program_name = 'ATK'
-        version = self.nc_parser.get('version')
-        sec_run.program_version = version if version is not None else 'unavailable'
-        sec_run.program_basis_set_type = 'numeric AOs'
-
-        sec_basis = sec_run.m_create(BasisSetAtomCentered)
-        sec_basis.basis_set_atom_centered_short_name = 'ATK LCAO basis'
+        version = self.nc_parser.get('version', 'unavailable')
+        sec_run.program = Program(name='ATK', version=version)
 
         self.parse_configurations()

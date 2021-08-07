@@ -35,18 +35,18 @@ def test_scf(parser):
     archive = EntryArchive()
     parser.parse('tests/data/Si2.nc', archive, None)
 
-    sec_run = archive.section_run[0]
-    assert sec_run.program_version == 'ATK 2016.0.3'
+    sec_run = archive.run[0]
+    assert sec_run.program.version == 'ATK 2016.0.3'
 
-    sec_method = sec_run.section_method[0]
-    assert sec_method.smearing_width == 300
-    assert sec_method.section_XC_functionals[1].XC_functional_name == 'LDA_C_PZ'
+    sec_method = sec_run.method[0]
+    assert sec_method.electronic.smearing.width == 300
+    assert sec_method.dft.xc_functional.correlation[0].name == 'LDA_C_PZ'
 
-    sec_system = sec_run.section_system[0]
-    assert sec_system.lattice_vectors[1][0].magnitude == approx(2.7153e-10)
-    assert sec_system.atom_positions[1][0].magnitude == approx(1.35765e-10)
-    assert sec_system.atom_labels == ['Si', 'Si']
+    sec_system = sec_run.system[0]
+    assert sec_system.atoms.lattice_vectors[1][0].magnitude == approx(2.7153e-10)
+    assert sec_system.atoms.positions[1][0].magnitude == approx(1.35765e-10)
+    assert sec_system.atoms.labels == ['Si', 'Si']
 
-    sec_scc = sec_run.section_single_configuration_calculation[0]
-    assert sec_scc.energy_total.value.magnitude == approx(-5.73249938e-17)
-    assert sec_scc.energy_XC.value.magnitude == approx(-3.41975673e-17)
+    sec_scc = sec_run.calculation[0]
+    assert sec_scc.energy.total.value.magnitude == approx(-5.73249938e-17)
+    assert sec_scc.energy.xc.value.magnitude == approx(-3.41975673e-17)
