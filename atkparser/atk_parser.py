@@ -244,7 +244,8 @@ class ATKParser(FairdiParser):
                     sec_xc_functional.correlation.append(Functional(name=xc_functional))
 
             sec_method.basis_set.append(
-                BasisSet(atom_centered=BasisSetAtomCentered(name='ATK LCAO basis')))
+                BasisSet(type='numeric AOs'))
+            sec_method.basis_set[0].atom_centered.append(BasisSetAtomCentered(name='ATK LCAO basis'))
 
             return sec_method
 
